@@ -20,7 +20,7 @@ PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,맑은 고딕,72,&H0000FFFF,&H000000FF,&H00000000,&HA0000000,-1,0,0,0,100,100,0,0,1,6,4,2,50,50,320,1
+Style: Default,sans-serif,72,&H0000FFFF,&H000000FF,&H00000000,&HA0000000,-1,0,0,0,100,100,0,0,1,6,4,2,50,50,320,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -137,7 +137,8 @@ function renderIndividualSceneClip({ imagePath, audioPath, duration, sceneIndex,
         `-t ${duration}`,
         '-r 30',
         '-threads 1',
-        '-preset ultrafast'
+        '-preset ultrafast',
+        '-y'
       ])
       .save(outputPath)
       .on('end', resolve)
@@ -150,7 +151,7 @@ function concatVideoClips(concatListPath, outputPath) {
     ffmpeg()
       .input(concatListPath)
       .inputOptions(['-f concat', '-safe 0'])
-      .outputOptions(['-c copy'])
+      .outputOptions(['-c copy', '-y'])
       .save(outputPath)
       .on('end', resolve)
       .on('error', (err) => reject(new Error(`Video concat failed: ${err.message}`)));
@@ -170,13 +171,14 @@ function renderFinalWithAudioAndSubtitles({ inputVideoPath, assPath, bgmPath, ou
 
     const outputOptions = [
       '-c:v libx264',
-      '-preset fast',
-      '-crf 20',
+      '-preset ultrafast',
+      '-crf 28',
       '-c:a aac',
       '-b:a 192k',
       '-pix_fmt yuv420p',
       '-shortest',
-      '-threads 1'
+      '-threads 1',
+      '-y'
     ];
 
     if (hasBgm) {
@@ -194,8 +196,13 @@ function renderFinalWithAudioAndSubtitles({ inputVideoPath, assPath, bgmPath, ou
     command
       .outputOptions(outputOptions)
       .on('progress', (progress) => {
-        if (onProgress && progress.percent) {
-          onProgress(Math.min(100, Math.round(progress.percent)));
+        if (onProgress) {
+          if (progress.percent) {
+            onProgress(Math.min(100, Math.round(progress.percent)));
+          } else if (progress.frames) {
+            // progress.percent가 없는 경우(알 수 없는 길이), 진행 상태 갱신이라도 발생시킴
+            onProgress(Math.min(99, 75 + Math.floor(progress.frames / 50)));
+          }
         }
       })
       .save(outputPath)

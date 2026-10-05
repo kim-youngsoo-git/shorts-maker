@@ -95,6 +95,19 @@ const VOICE_ACTORS = [
     badge: '하이엔드 럭셔리',
     baseVoice: 'ko-KR-SunHiNeural',
     pitch: '-1%'
+  },
+  {
+    id: 'custom_xtts',
+    legacyIds: [],
+    name: '나의 목소리',
+    gender: 'custom',
+    category: '커스텀 성우',
+    title: 'XTTS 커스텀 목소리 복제',
+    description: '구글 코랩 XTTS 서버를 통해 생성된 사용자 고유의 커스텀 목소리입니다.',
+    tag: '커스텀 / 유니크',
+    badge: 'XTTS 복제 음성',
+    baseVoice: 'custom',
+    pitch: '+0%'
   }
 ];
 
@@ -139,11 +152,61 @@ function escapeXml(unsafe) {
 }
 
 /**
- * 🎙️ 100% 진짜 리얼 성우 음성 합성 (Microsoft Edge Neural Engine)
+ * 🎙️ 100% 진짜 리얼 성우 음성 합성 (Microsoft Edge Neural Engine & Custom XTTS)
  */
-async function generateSpeech(text, voiceId = 'male_injoon', outputPath, speedMultiplier = 1.0) {
+async function generateSpeech(text, voiceId = 'male_injoon', outputPath, speedMultiplier = 1.0, options = {}) {
   await fs.ensureDir(path.dirname(outputPath));
   const voiceProfile = getVoiceById(voiceId);
+
+  if (voiceId === 'custom_xtts') {
+    try {
+      const FormData = require('form-data');
+      const form = new FormData();
+      form.append('text', text);
+      form.append('language', 'ko');
+      
+      if (options.customVoicePath && fs.existsSync(options.customVoicePath)) {
+        form.append('speaker_wav', fs.createReadStream(options.customVoicePath));
+      } else {
+        throw new Error('커스텀 목소리(speaker_wav) 파일이 서버로 전달되지 않았습니다.');
+      }
+      
+      let apiUrl = options.colabUrl;
+      if (!apiUrl) throw new Error('Colab API URL이 제공되지 않았습니다.');
+      if (apiUrl.endsWith('/')) apiUrl = apiUrl.slice(0, -1);
+      
+      console.log(`[VoiceModule] Requesting XTTS clone from ${apiUrl}...`);
+      
+      const res = await axios.post(`${apiUrl}/api/clone`, form, {
+        headers: {
+          ...form.getHeaders(),
+          'Bypass-Tunnel-Reminder': 'true'
+        },
+        responseType: 'arraybuffer',
+        timeout: 60000 // 60초 대기
+      });
+      
+      const rawPath = outputPath + '.raw.wav';
+      await fs.writeFile(rawPath, Buffer.from(res.data));
+      
+      // Convert and apply speed
+      let filterChain = [];
+      if (Math.abs(speedMultiplier - 1.0) > 0.01) {
+        filterChain.push(`atempo=${speedMultiplier.toFixed(2)}`);
+      }
+      const afArg = filterChain.length > 0 ? `-af "${filterChain.join(',')}"` : '';
+      const cmd = `"${ffmpegPath}" -y -i "${rawPath}" ${afArg} -c:a mp3 "${outputPath}"`;
+      
+      execSync(cmd, { stdio: 'ignore' });
+      await fs.remove(rawPath).catch(() => {});
+      
+      const duration = getAudioDuration(outputPath);
+      return { outputPath, duration, voiceProfile };
+    } catch (err) {
+      console.error('[VoiceModule] XTTS Generation Error:', err.response ? err.response.data.toString() : err.message);
+      throw new Error(`XTTS 커스텀 음성 생성 실패: ${err.message}`);
+    }
+  }
 
   const userSpeed = parseFloat(speedMultiplier) || 1.0;
   const ratePercent = Math.round((userSpeed - 1.0) * 100);

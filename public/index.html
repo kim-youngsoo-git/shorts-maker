@@ -92,6 +92,9 @@
               <button type="button" class="tab-btn" id="tabFemale" onclick="filterVoiceCategory('female')">
                 <i class="fa-solid fa-venus"></i> 👩 여성 성우 (3인)
               </button>
+              <button type="button" class="tab-btn" id="tabCustom" onclick="filterVoiceCategory('custom')">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> 나의 목소리 (XTTS)
+              </button>
             </div>
 
             <div class="grid-3 mb-10">
@@ -107,6 +110,9 @@
                     <option value="female_sunhi">선희 (우아함·신뢰 | 100% 표준 여성 아나운서)</option>
                     <option value="female_jimin">지민 (생기·화사함 | 100% 트렌디 생기 여성)</option>
                     <option value="female_yujin">유진 (럭셔리·감성 | 100% 하이엔드 중저음 여성)</option>
+                  </optgroup>
+                  <optgroup label="✨ 커스텀 성우 (음성 복제)" id="optgroupCustom">
+                    <option value="custom_xtts">나의 목소리 (Colab XTTS 연결)</option>
                   </optgroup>
                 </select>
               </div>
@@ -139,6 +145,18 @@
               </div>
             </div>
 
+            <!-- Custom XTTS Settings (Hidden by default) -->
+            <div id="customVoiceOptions" class="mt-10" style="display: none; background: #2a2e3d; padding: 15px; border-radius: 8px; border: 1px dashed #7a5cff;">
+              <h4 style="margin-top:0; color:#b09fff; margin-bottom: 10px;"><i class="fa-solid fa-link"></i> 구글 코랩 XTTS 연결 설정</h4>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label for="colabUrlInput" style="display:block; margin-bottom: 4px; font-size: 0.9em;">Colab 로컬터널 URL (예: https://xxxx.loca.lt)</label>
+                <input type="text" id="colabUrlInput" class="form-control" placeholder="https://어쩌구.loca.lt">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="customVoiceFileInput" style="display:block; margin-bottom: 4px; font-size: 0.9em;">나의 목소리 녹음 파일 (3~10초 .wav)</label>
+                <input type="file" id="customVoiceFileInput" accept="audio/wav,audio/mp3,audio/m4a" class="form-control" style="background:#1e212b; padding:8px;">
+              </div>
+            </div>
             <!-- Real-time Voice Actor Info Card -->
             <div id="voiceDetailCard" class="voice-detail-card mt-10">
               <div class="voice-detail-top">

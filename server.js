@@ -89,7 +89,7 @@ app.post('/api/split-script', (req, res) => {
 /**
  * POST /api/generate-shorts - Full Pipeline
  */
-app.post('/api/generate-shorts', upload.array('photos', 20), async (req, res) => {
+app.post('/api/generate-shorts', upload.any(), async (req, res) => {
   const jobId = `job_${Date.now()}`;
 
   let scenes = [];
@@ -104,6 +104,9 @@ app.post('/api/generate-shorts', upload.array('photos', 20), async (req, res) =>
     if (req.body.voiceId) voiceId = req.body.voiceId;
     if (req.body.speechSpeed) speechSpeed = parseFloat(req.body.speechSpeed) || 0.95;
     if (req.body.bgmOption) bgmOption = req.body.bgmOption;
+    
+    var colabUrl = req.body.colabUrl || '';
+    var customVoicePath = null;
   } catch (parseErr) {
     return res.status(400).json({ success: false, error: '요청 데이터 파싱 오류: ' + parseErr.message });
   }
@@ -113,7 +116,9 @@ app.post('/api/generate-shorts', upload.array('photos', 20), async (req, res) =>
   }
 
   const uploadedFiles = req.files || [];
-  const customPhotoPaths = uploadedFiles.map(file => file.path);
+  const customPhotoPaths = uploadedFiles.filter(f => f.fieldname === 'photos').map(file => file.path);
+  const customVoiceFile = uploadedFiles.find(f => f.fieldname === 'customVoice');
+  if (customVoiceFile) customVoicePath = customVoiceFile.path;
 
   generationProgress[jobId] = { status: 'processing', step: '자연스러운 성우 음성 및 영상 조율 중...', percent: 10 };
 
@@ -136,7 +141,7 @@ app.post('/api/generate-shorts', upload.array('photos', 20), async (req, res) =>
 
         // 1. Generate Voice Audio with Specific Character Pitch & Speed Multiplier
         const audioPath = path.join(jobDir, `voice_${i}.mp3`);
-        const { duration } = await generateSpeech(scene.text, voiceId, audioPath, speechSpeed);
+        const { duration } = await generateSpeech(scene.text, voiceId, audioPath, speechSpeed, { colabUrl, customVoicePath });
 
         // 2. Visual Image Selection
         const imagePath = path.join(jobDir, `image_${i}.jpg`);

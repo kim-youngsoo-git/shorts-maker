@@ -64,6 +64,14 @@ const VOICE_PROFILES = {
     role: '하이엔드 럭셔리',
     tag: '럭셔리 / 감성',
     desc: '깊이 있고 편안하게 감싸안는 중저음 럭셔리 음색. 고급 펜트하우스 & 하이엔드 타운하우스 홍보에 최적.'
+  },
+  custom_xtts: {
+    name: '나의 목소리',
+    gender: 'custom',
+    genderText: '커스텀 성우',
+    role: 'XTTS 복제 음성',
+    tag: '커스텀 / 유니크',
+    desc: '구글 코랩 XTTS 서버를 통해 생성된 사용자 고유의 커스텀 목소리입니다.'
   }
 };
 
@@ -88,6 +96,11 @@ function onVoiceChange() {
   if (roleBadge) roleBadge.textContent = profile.role;
   if (tagEl) tagEl.innerHTML = `<i class="fa-solid fa-hashtag"></i> ${profile.tag}`;
   if (descEl) descEl.textContent = profile.desc;
+
+  const customOpts = document.getElementById('customVoiceOptions');
+  if (customOpts) {
+    customOpts.style.display = voiceId === 'custom_xtts' ? 'block' : 'none';
+  }
 }
 
 function filterVoiceCategory(category) {
@@ -98,6 +111,7 @@ function filterVoiceCategory(category) {
 
   const maleGroup = document.getElementById('optgroupMale');
   const femaleGroup = document.getElementById('optgroupFemale');
+  const customGroup = document.getElementById('optgroupCustom');
   const select = document.getElementById('voiceSelect');
 
   if (!maleGroup || !femaleGroup || !select) return;
@@ -105,18 +119,26 @@ function filterVoiceCategory(category) {
   if (category === 'male') {
     maleGroup.style.display = '';
     femaleGroup.style.display = 'none';
+    if (customGroup) customGroup.style.display = 'none';
     if (!select.value.startsWith('male_')) {
       select.value = 'male_injoon';
     }
   } else if (category === 'female') {
     maleGroup.style.display = 'none';
     femaleGroup.style.display = '';
+    if (customGroup) customGroup.style.display = 'none';
     if (!select.value.startsWith('female_')) {
       select.value = 'female_sunhi';
     }
+  } else if (category === 'custom') {
+    maleGroup.style.display = 'none';
+    femaleGroup.style.display = 'none';
+    if (customGroup) customGroup.style.display = '';
+    select.value = 'custom_xtts';
   } else {
     maleGroup.style.display = '';
     femaleGroup.style.display = '';
+    if (customGroup) customGroup.style.display = '';
   }
 
   onVoiceChange();
@@ -373,6 +395,25 @@ async function startGeneration() {
   formData.append('voiceId', voiceId);
   formData.append('speechSpeed', speechSpeed);
   formData.append('bgmOption', bgmOption);
+
+  if (voiceId === 'custom_xtts') {
+    const colabUrl = document.getElementById('colabUrlInput').value.trim();
+    if (!colabUrl) {
+      alert('Colab 로컬터널 URL을 입력해주세요.');
+      generateBtn.disabled = false;
+      return;
+    }
+    formData.append('colabUrl', colabUrl);
+    
+    const voiceInput = document.getElementById('customVoiceFileInput');
+    if (voiceInput.files.length > 0) {
+      formData.append('customVoice', voiceInput.files[0]);
+    } else {
+      alert('나의 목소리 녹음 파일(.wav)을 업로드해주세요.');
+      generateBtn.disabled = false;
+      return;
+    }
+  }
 
   selectedPhotoFiles.forEach(file => {
     formData.append('photos', file);

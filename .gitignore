@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Generated Output Videos
+output/*.mp4
+output/*.webm
+
+# Temporary Build Files
+temp/
+uploads/*
+!uploads/.gitkeep
+
+# System & OS Files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

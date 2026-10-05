@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 홍보 쇼츠 영상 자동 생성기 (Shorts Maker Pro)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo">
+        <i class="fa-solid fa-clapperboard logo-icon"></i>
+        <div>
+          <h1>AI 홍보 쇼츠 영상 생성기</h1>
+          <p class="subtitle">고품질 성우 음성 · 현장 사진 매칭 · 45초 세로형 영상 1클릭 제작</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge"><i class="fa-solid fa-volume-high"></i> 성우 & BGM 미리듣기</span>
+        <span class="badge"><i class="fa-solid fa-gauge-high"></i> 정밀 낭독 속도</span>
+        <span class="badge"><i class="fa-solid fa-mobile-screen"></i> 9:16 1080x1920</span>
+      </div>
+    </header>
+
+    <!-- Main Grid Content -->
+    <main class="main-content">
+      <!-- Left Panel: Input & Controls -->
+      <section class="panel control-panel">
+        
+        <!-- Step 1: Script Input -->
+        <div class="card">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-pen-to-square"></i> 1. 홍보 대본 입력</h2>
+            <div class="sample-buttons">
+              <button class="btn btn-sm btn-secondary" onclick="loadSample('apt')">🏢 아파트 분양 예시</button>
+              <button class="btn btn-sm btn-secondary" onclick="loadSample('officetel')">🌆 오피스텔 예시</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <textarea id="scriptInput" placeholder="약 45초 분량의 홍보 대본 텍스트를 입력하세요. 예) 역세권 신축 오피스텔 분양! 강남 10분거리, 한강 조망 프리미엄..." rows="5"></textarea>
+            <div class="flex-between mt-10">
+              <span class="text-muted" id="charCount">0 자 (권장 120~250자)</span>
+              <button class="btn btn-primary" onclick="splitScript()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> 대본 씬(Scene) 분석 및 분할
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Custom Photos Upload (Optional) -->
+        <div class="card mt-20">
+          <div class="card-header flex-between">
+            <h2><i class="fa-solid fa-camera-retro"></i> 2. 분양 현장/인테리어 사진 등록 (선택)</h2>
+            <span class="badge-accent" id="photoStatusBadge">사진 미등록 (기본 비주얼 자동 생성)</span>
+          </div>
+          <div class="card-body">
+            <p class="text-sub mb-10">현장 사진, 조감도, 인테리어 사진 여러 장을 올려주시면 씬별로 자동 배치됩니다. (사진을 등록하지 않으면 기본 추천 이미지가 제공됩니다.)</p>
+            
+            <div class="file-upload-box" onclick="document.getElementById('photoInput').click()">
+              <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+              <p><strong>클릭하여 현장 사진들 선택</strong> 또는 파일 들여놓기</p>
+              <span class="text-muted">JPG, PNG, WEBP 등 다중 사진 선택 지원</span>
+              <input type="file" id="photoInput" multiple accept="image/*" style="display: none;" onchange="handlePhotoSelect(event)">
+            </div>
+
+            <div id="photoPreviewGrid" class="photo-preview-grid mt-10" style="display: none;"></div>
+          </div>
+        </div>
+
+        <!-- Step 3: Voice Actor, Precise Speed & BGM Settings -->
+        <div class="card mt-20">
+          <div class="card-header flex-between">
+            <h2><i class="fa-solid fa-microphone-lines"></i> 3. 성우 선택 (남/여 모듈) & 낭독 속도 & BGM</h2>
+            <button class="btn btn-sm btn-secondary" onclick="playVoicePreview()" id="previewBtn">
+              <i class="fa-solid fa-volume-high"></i> 성우 & BGM 미리듣기
+            </button>
+          </div>
+          <div class="card-body">
+            <!-- Voice Gender Filter Tabs -->
+            <div class="voice-filter-tabs mb-10">
+              <span class="filter-label"><i class="fa-solid fa-filter"></i> 성우 종류:</span>
+              <button type="button" class="tab-btn active" id="tabAll" onclick="filterVoiceCategory('all')">
+                <i class="fa-solid fa-users"></i> 전체 성우 (6인)
+              </button>
+              <button type="button" class="tab-btn" id="tabMale" onclick="filterVoiceCategory('male')">
+                <i class="fa-solid fa-mars"></i> 👨 남성 성우 (3인)
+              </button>
+              <button type="button" class="tab-btn" id="tabFemale" onclick="filterVoiceCategory('female')">
+                <i class="fa-solid fa-venus"></i> 👩 여성 성우 (3인)
+              </button>
+            </div>
+
+            <div class="grid-3 mb-10">
+              <div class="form-group">
+                <label for="voiceSelect"><i class="fa-solid fa-user-tie"></i> 성우 목소리 선택</label>
+                <select id="voiceSelect" class="form-select" onchange="onVoiceChange()">
+                  <optgroup label="👨 남성 성우 (신뢰·중후·파워)" id="optgroupMale">
+                    <option value="male_injoon" selected>인준 (중후·신뢰 | 100% 정통 남성 대표)</option>
+                    <option value="male_hyunsu">현수 (젊음·트렌디 | 100% 도심형 스마트 남성)</option>
+                    <option value="male_power">봉진 (파워저음·임팩트 | 100% 파워 바리톤 남성)</option>
+                  </optgroup>
+                  <optgroup label="👩 여성 성우 (우아·생기·럭셔리)" id="optgroupFemale">
+                    <option value="female_sunhi">선희 (우아함·신뢰 | 100% 표준 여성 아나운서)</option>
+                    <option value="female_jimin">지민 (생기·화사함 | 100% 트렌디 생기 여성)</option>
+                    <option value="female_yujin">유진 (럭셔리·감성 | 100% 하이엔드 중저음 여성)</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="speedSelect"><i class="fa-solid fa-gauge-high"></i> 낭독 속도 조절</label>
+                <select id="speedSelect" class="form-select">
+                  <option value="0.80">아주 또박또박하고 천천히 (0.80x)</option>
+                  <option value="0.90">차분하고 여유있게 (0.90x)</option>
+                  <option value="1.00" selected>보통 표준 속도 (1.00x - 추천)</option>
+                  <option value="1.15">약간 빠르게 (1.15x)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <div class="flex-between" style="margin-bottom: 6px;">
+                  <label for="bgmSelect" style="margin-bottom: 0;"><i class="fa-solid fa-music"></i> 배경음악 (BGM)</label>
+                  <button type="button" class="btn-bgm-play" id="bgmSoloBtn" onclick="toggleBgmSoloPlay()">
+                    <i class="fa-solid fa-play"></i> BGM 바로듣기
+                  </button>
+                </div>
+                <select id="bgmSelect" class="form-select" onchange="onBgmChange()">
+                  <option value="upbeat" selected>신나고 활기찬 분위기 (Carefree - 추천)</option>
+                  <option value="luxury">고급스럽고 세련된 분위기 (Lobby Time 라운지)</option>
+                  <option value="calm">차분하고 신뢰감 있는 분위기 (Deliberate Thought)</option>
+                  <option value="none">무음 (배경음악 없음)</option>
+                </select>
+                <!-- Standalone Audio Element for BGM preview -->
+                <audio id="bgmSoloPlayer" loop style="display: none;"></audio>
+              </div>
+            </div>
+
+            <!-- Real-time Voice Actor Info Card -->
+            <div id="voiceDetailCard" class="voice-detail-card mt-10">
+              <div class="voice-detail-top">
+                <div class="voice-meta-left">
+                  <span class="badge-gender male" id="voiceGenderBadge"><i class="fa-solid fa-mars"></i> 남성 성우</span>
+                  <span class="voice-actor-name" id="voiceActorName">인준</span>
+                  <span class="badge-role" id="voiceRoleBadge">정통 남성 대표</span>
+                </div>
+                <span class="badge-tag" id="voiceTag"><i class="fa-solid fa-hashtag"></i> 중후함 / 신뢰</span>
+              </div>
+              <p class="voice-desc-text" id="voiceDescription">
+                묵직하고 전달력이 뛰어난 100% 리얼 정통 남성 보이스. 신도시 대단지 아파트 분양 및 핵심 입지·투자 가치 전달에 최적.
+              </p>
+            </div>
+
+            <!-- Preview Audio Player Element -->
+            <div id="previewAudioBox" style="display: none;" class="preview-audio-box mt-10">
+              <span class="text-muted"><i class="fa-solid fa-headphones"></i> 통합 성우 & BGM 미리듣기 재생 중...</span>
+              <audio id="previewAudioPlayer" controls autoplay style="width: 100%; height: 36px; margin-top: 4px;"></audio>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Scenes Preview & Edit -->
+        <div class="card mt-20" id="scenesCard" style="display: none;">
+          <div class="card-header flex-between">
+            <h2><i class="fa-solid fa-film"></i> 4. 씬(Scene) 구성 및 자막 확인</h2>
+            <span class="badge-accent" id="sceneCountBadge">0개 씬 생성됨</span>
+          </div>
+          <div class="card-body">
+            <div id="scenesList" class="scenes-list"></div>
+
+            <div class="generate-action-box mt-20">
+              <button class="btn btn-success btn-lg btn-block" onclick="startGeneration()" id="generateBtn">
+                <i class="fa-solid fa-circle-play"></i> 45초 쇼츠 동영상 1클릭 생성하기
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Panel: Video Preview & Progress -->
+      <section class="panel preview-panel">
+        <div class="card player-card">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-tv"></i> 완성된 쇼츠 미리보기 (9:16)</h2>
+          </div>
+          <div class="card-body player-body">
+            
+            <div class="phone-mockup">
+              <div class="phone-screen">
+                <video id="videoPlayer" controls style="display: none;"></video>
+
+                <div id="playerPlaceholder" class="player-placeholder">
+                  <div class="placeholder-icon">
+                    <i class="fa-solid fa-film"></i>
+                  </div>
+                  <h3>쇼츠 생성을 시작해주세요</h3>
+                  <p>대본 입력 및 성우 미리듣기 후 [쇼츠 생성하기]를 누르면<br>약 45초 분량의 세로 영상이 완성됩니다.</p>
+                </div>
+
+                <div id="progressOverlay" class="progress-overlay" style="display: none;">
+                  <div class="spinner"></div>
+                  <h3 id="progressStatus">영상 생성 준비 중...</h3>
+                  <div class="progress-bar-container">
+                    <div id="progressBar" class="progress-bar" style="width: 0%;"></div>
+                  </div>
+                  <span id="progressPercent" class="progress-percent">0%</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="downloadBox" class="mt-20 text-center" style="display: none;">
+              <a id="downloadLink" href="#" download class="btn btn-accent btn-lg btn-block">
+                <i class="fa-solid fa-download"></i> 완성된 쇼츠 동영상 (.mp4) 다운로드
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

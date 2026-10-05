@@ -467,7 +467,13 @@ function showVideoResult(videoUrl) {
   videoPlayer.play();
 
   downloadLink.href = videoUrl;
+  downloadLink.download = videoUrl.split('/').pop() || 'shorts_video.mp4';
   downloadBox.style.display = 'block';
+  
+  // 자동 다운로드 트리거 (사용자 편의)
+  setTimeout(() => {
+    downloadLink.click();
+  }, 1000);
 }
 
 function escapeHtml(text) {

@@ -425,6 +425,11 @@ function startPollingProgress() {
           alert(info.step);
           hideProgressOverlay();
           document.getElementById('generateBtn').disabled = false;
+        } else if (info.status === 'not_found') {
+          clearInterval(pollTimer);
+          alert('서버 재시작(메모리 초과 등)으로 인해 작업이 끊어졌습니다. 사진 용량을 줄이거나 다시 시도해주세요.');
+          hideProgressOverlay();
+          document.getElementById('generateBtn').disabled = false;
         }
       }
     } catch (err) {

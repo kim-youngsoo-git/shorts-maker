@@ -135,7 +135,9 @@ function renderIndividualSceneClip({ imagePath, audioPath, duration, sceneIndex,
         '-pix_fmt yuv420p',
         `-vf ${zoomFilter}`,
         `-t ${duration}`,
-        '-r 30'
+        '-r 30',
+        '-threads 1',
+        '-preset ultrafast'
       ])
       .save(outputPath)
       .on('end', resolve)
@@ -173,7 +175,8 @@ function renderFinalWithAudioAndSubtitles({ inputVideoPath, assPath, bgmPath, ou
       '-c:a aac',
       '-b:a 192k',
       '-pix_fmt yuv420p',
-      '-shortest'
+      '-shortest',
+      '-threads 1'
     ];
 
     if (hasBgm) {
